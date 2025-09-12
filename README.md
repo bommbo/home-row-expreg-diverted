@@ -2,6 +2,8 @@
 
 Return to **exactly where you started** after any command that follows a `home-row-expreg-expand-with-letters` expansion — no keystrokes, no thinking.
 
+Hit C-g to cancel? You'll land back home just the same.
+
 ---
 
 ## Dependencies
