@@ -2,7 +2,7 @@
 
 ;; Author: bommbo
 ;; URL: https://github.com/bommbo/home-row-expreg-diverted
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; Package-Requires: ((emacs "30.1") (diverted "0.1"))
 ;; Keywords: convenience, region, expreg, diverted
 
@@ -17,7 +17,6 @@
 ;;   (home-row-expreg-diverted-mode 1)
 
 ;;; Code:
-
 (require 'diverted)
 
 (defgroup home-row-expreg-diverted nil
@@ -27,10 +26,15 @@
 
 (defcustom home-row-expreg-diverted-commands
   nil
-  "Commands which, when run right after an expansion, trigger jump-back.
-Add symbols like \\='meow-save, \\='save-buffer, \\='indent-for-tab-command, etc."
+  "User-defined commands which trigger jump-back after expansion.
+Add symbols like \\='meow-save, \\='save-buffer, etc."
   :type '(repeat symbol)
   :group 'home-row-expreg-diverted)
+
+;; 内置取消命令（用户不可删，始终生效）
+(defconst home-row-expreg-diverted--builtin-commands
+  '(keyboard-quit deactivate-mark)
+  "Built-in commands that always trigger jump-back on cancellation.")
 
 ;; single-marker stack
 (defvar home-row-expreg-diverted--origin-marker nil
@@ -58,19 +62,22 @@ Add symbols like \\='meow-save, \\='save-buffer, \\='indent-for-tab-command, etc
 
 ;;;###autoload
 (define-minor-mode home-row-expreg-diverted-mode
-  "Use diverted event table to jump back after expansion."
+  "Jump back after expansion + any trigger or cancellation command."
   :global t
   :lighter " hred"
   (if home-row-expreg-diverted-mode
       (progn
         (advice-add 'home-row-expreg-expand-with-letters
                     :around #'home-row-expreg-diverted--around-expansion)
-        (dolist (cmd home-row-expreg-diverted-commands)
+        ;; 用户命令 + 内置取消命令 一起挂 advice
+        (dolist (cmd (append home-row-expreg-diverted-commands
+                             home-row-expreg-diverted--builtin-commands))
           (advice-add cmd :around #'home-row-expreg-diverted--around-command)))
     (progn
       (advice-remove 'home-row-expreg-expand-with-letters
                      #'home-row-expreg-diverted--around-expansion)
-      (dolist (cmd home-row-expreg-diverted-commands)
+      (dolist (cmd (append home-row-expreg-diverted-commands
+                           home-row-expreg-diverted--builtin-commands))
         (advice-remove cmd #'home-row-expreg-diverted--around-command)))))
 
 (provide 'home-row-expreg-diverted)
