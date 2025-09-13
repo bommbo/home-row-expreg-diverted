@@ -69,7 +69,7 @@ Add symbols like \\='meow-save, \\='save-buffer, etc."
       (progn
         (advice-add 'home-row-expreg-expand-with-letters
                     :around #'home-row-expreg-diverted--around-expansion)
-        ;; 用户命令 + 内置取消命令 一起挂 advice
+        
         (dolist (cmd (append home-row-expreg-diverted-commands
                              home-row-expreg-diverted--builtin-commands))
           (advice-add cmd :around #'home-row-expreg-diverted--around-command)))
