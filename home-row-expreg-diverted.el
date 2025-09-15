@@ -31,7 +31,7 @@ Add symbols like \\='meow-save, \\='save-buffer, etc."
   :type '(repeat symbol)
   :group 'home-row-expreg-diverted)
 
-;; 内置取消命令（用户不可删，始终生效）
+;; Built-in commands ！！！
 (defconst home-row-expreg-diverted--builtin-commands
   '(keyboard-quit deactivate-mark)
   "Built-in commands that always trigger jump-back on cancellation.")
