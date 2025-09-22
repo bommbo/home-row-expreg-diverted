@@ -2,7 +2,7 @@
 
 ;; Author: bommbo
 ;; URL: https://github.com/bommbo/home-row-expreg-diverted
-;; Version: 0.1.4
+;; Version: 0.1.7
 ;; Package-Requires: ((emacs "30.1") (diverted "0.1"))
 ;; Keywords: convenience, region, expreg, diverted
 
@@ -31,12 +31,10 @@ Add symbols like \\='meow-save, \\='save-buffer, etc."
   :type '(repeat symbol)
   :group 'home-row-expreg-diverted)
 
-;; Built-in commands ！！！
 (defconst home-row-expreg-diverted--builtin-commands
   '(keyboard-quit deactivate-mark)
   "Built-in commands that always trigger jump-back on cancellation.")
 
-;; single-marker stack
 (defvar home-row-expreg-diverted--origin-marker nil
   "Marker to original position before expansion.")
 
@@ -45,20 +43,17 @@ Add symbols like \\='meow-save, \\='save-buffer, etc."
 
 (defun home-row-expreg-diverted--pop ()
   (when (marker-position home-row-expreg-diverted--origin-marker)
-    (goto-char home-row-expreg-diverted--origin-marker)
-    (set-marker home-row-expreg-diverted--origin-marker nil)))
+	(goto-char home-row-expreg-diverted--origin-marker)
+	(set-marker home-row-expreg-diverted--origin-marker nil)))
 
-;; around advice for expansion (only push)
 (defun home-row-expreg-diverted--around-expansion (orig-fun &rest args)
   (home-row-expreg-diverted--push)
   (apply orig-fun args))
 
-;; around advice for each trigger command (pop this command)
-(defun home-row-expreg-diverted--around-command (orig-fun &rest args)
-  (prog1 (apply orig-fun args)
-    (when (eq last-command 'home-row-expreg-expand-with-letters)
-      (home-row-expreg-diverted--pop)
-      (message "Returned to pre-expansion point"))))
+(defun home-row-expreg-diverted--after-command (&rest _)
+  (when (eq last-command 'home-row-expreg-expand-with-letters)
+	(home-row-expreg-diverted--pop)
+	(message "Returned to pre-expansion point")))
 
 ;;;###autoload
 (define-minor-mode home-row-expreg-diverted-mode
@@ -66,19 +61,21 @@ Add symbols like \\='meow-save, \\='save-buffer, etc."
   :global t
   :lighter " hred"
   (if home-row-expreg-diverted-mode
-      (progn
-        (advice-add 'home-row-expreg-expand-with-letters
-                    :around #'home-row-expreg-diverted--around-expansion)
-        
-        (dolist (cmd (append home-row-expreg-diverted-commands
-                             home-row-expreg-diverted--builtin-commands))
-          (advice-add cmd :around #'home-row-expreg-diverted--around-command)))
-    (progn
-      (advice-remove 'home-row-expreg-expand-with-letters
-                     #'home-row-expreg-diverted--around-expansion)
-      (dolist (cmd (append home-row-expreg-diverted-commands
-                           home-row-expreg-diverted--builtin-commands))
-        (advice-remove cmd #'home-row-expreg-diverted--around-command)))))
+	  (progn
+		(advice-add 'home-row-expreg-expand-with-letters
+					:around #'home-row-expreg-diverted--around-expansion)
+		(dolist (cmd (append home-row-expreg-diverted-commands
+							 home-row-expreg-diverted--builtin-commands))
+		  (advice-add cmd :after #'home-row-expreg-diverted--after-command)))
+	(progn
+	  (advice-remove 'home-row-expreg-expand-with-letters
+					 #'home-row-expreg-diverted--around-expansion)
+	  (dolist (cmd (append home-row-expreg-diverted-commands
+						   home-row-expreg-diverted--builtin-commands))
+		(advice-remove cmd #'home-row-expreg-diverted--after-command)))))
+
+(dolist (cmd '(indent-for-tab-command keyboard-quit deactivate-mark))
+  (advice-remove cmd #'diverted--advice-fun))
 
 (provide 'home-row-expreg-diverted)
 ;;; home-row-expreg-diverted.el ends here
